@@ -1,0 +1,57 @@
+# The AI reviewer on every pull request (lab 2).
+#
+# One-time setup (lab 2 walks through it):
+#   1. An Entra ID app with a FEDERATED credential for this repository's pull
+#      requests: GitHub proves who is asking with a short-lived token, so no
+#      secret is stored anywhere. Its subject must match exactly:
+#      repo:<owner>@<owner-id>/<repo>@<repo-id>:pull_request (lab 2 builds it).
+#   2. Bring up with CI_PRINCIPAL_ID=<the app's service principal id>, so
+#      Terraform lets it call the model.
+#   3. Repository variables (Settings → Secrets and variables → Actions →
+#      Variables): AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,
+#      AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_CHAT_DEPLOYMENT. Names, not secrets.
+name: ai-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read          # read the code
+  pull-requests: write    # post the review (GitHub's default setting still stops Actions approving PRs)
+  id-token: write         # OIDC: sign in to Azure without a stored secret
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # the base branch too, to compute the diff
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sign in to Azure (skipped for forks, which GitHub gives no token)
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Install the reviewer
+        run: pip install -e . -c constraints.txt
+      - name: The pull request's changes
+        run: git diff "origin/$BASE_REF...HEAD" > pr.diff
+        env:
+          BASE_REF: ${{ github.base_ref }}
+      - name: Review it
+        run: python -m reviewer.ci
+        env:
+          PR_DIFF: pr.diff
+          PR_TITLE: ${{ github.event.pull_request.title }}   # PR text only through env:
+          PR_BODY: ${{ github.event.pull_request.body }}     # never inside a run: line
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          GITHUB_TOKEN: ${{ github.token }}
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT: ${{ vars.AZURE_OPENAI_CHAT_DEPLOYMENT }}

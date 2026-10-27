@@ -1,0 +1,24 @@
+diff --git a/fieldnotes/store.py b/fieldnotes/store.py
+index 61016f2..f6bb30f 100644
+--- a/fieldnotes/store.py
++++ b/fieldnotes/store.py
+@@ -23,11 +23,14 @@ def connect(path: str = ":memory:") -> sqlite3.Connection:
+ 
+ def add_ticket(db: sqlite3.Connection, service: str, title: str, severity: str) -> int:
+     opened = datetime.now(UTC).isoformat()
+-    cur = db.execute(
+-        "INSERT INTO tickets (service, title, severity, opened_at) VALUES (?, ?, ?, ?)",
+-        (service, title, severity, opened),
+-    )
+-    db.commit()
++    try:
++        cur = db.execute(
++            "INSERT INTO tickets (service, title, severity, opened_at) VALUES (?, ?, ?, ?)",
++            (service, title, severity, opened),
++        )
++        db.commit()
++    except Exception:
++        return -1
+     return cur.lastrowid
+ 
+ 

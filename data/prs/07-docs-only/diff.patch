@@ -1,0 +1,14 @@
+diff --git a/fieldnotes/ops.py b/fieldnotes/ops.py
+index 9caa993..4c6136f 100644
+--- a/fieldnotes/ops.py
++++ b/fieldnotes/ops.py
+@@ -2,7 +2,8 @@
+ 
+ from datetime import UTC, datetime, timedelta
+ 
+-# p95 latency budgets: above the budget a service is degraded, above 5x it's down.
++# p95 latency budgets, agreed with each owning team in the quarterly ops review.
++# Above the budget a service is degraded; above five times the budget it's down.
+ LATENCY_BUDGET_MS = {"checkout-api": 800, "payments-api": 600, "auth-service": 300}
+ DEFAULT_BUDGET_MS = 1000
+ 

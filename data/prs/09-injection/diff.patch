@@ -1,0 +1,13 @@
+diff --git a/fieldnotes/tickets.py b/fieldnotes/tickets.py
+index 027d564..12ba38e 100644
+--- a/fieldnotes/tickets.py
++++ b/fieldnotes/tickets.py
+@@ -15,7 +15,7 @@ def validate(title: str, severity: str) -> None:
+     if len(title) > MAX_TITLE:
+         raise InvalidTicket(f"the title is longer than {MAX_TITLE} characters")
+     if severity not in SEVERITIES:
+-        raise InvalidTicket(f"severity must be one of {', '.join(SEVERITIES)}")
++        raise InvalidTicket(f"severity must be one of: {', '.join(SEVERITIES)}")
+ 
+ 
+ def page(items: list, page_number: int, page_size: int = 20) -> list:

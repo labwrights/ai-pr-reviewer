@@ -1,0 +1,22 @@
+[project]
+name = "ai-pr-reviewer"
+version = "0.1.0"
+description = "AI PR Reviewer on Azure: a free Labwrights package"
+requires-python = ">=3.12"
+dependencies = [
+    "openai>=3.39",
+    "azure-identity>=1.27",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.setuptools]
+packages = ["reviewer", "fieldnotes"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "fieldnotes/tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100

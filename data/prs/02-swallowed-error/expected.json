@@ -1,0 +1,10 @@
+{
+  "planted": {
+    "file": "fieldnotes/store.py",
+    "lines": [
+      26,
+      33
+    ],
+    "bug": "every error swallowed and turned into -1, which callers treat as an id: failures become silent"
+  }
+}

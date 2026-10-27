@@ -1,0 +1,19 @@
+diff --git a/fieldnotes/tickets.py b/fieldnotes/tickets.py
+index 027d564..06ce68b 100644
+--- a/fieldnotes/tickets.py
++++ b/fieldnotes/tickets.py
+@@ -26,9 +26,8 @@ def page(items: list, page_number: int, page_size: int = 20) -> list:
+     return items[start:start + page_size]
+ 
+ 
+-def with_tag(tags: list[str] | None, tag: str) -> list[str]:
+-    """A new list of tags with `tag` added once; the input list is never changed."""
+-    result = list(tags or [])
+-    if tag not in result:
+-        result.append(tag)
+-    return result
++def with_tag(tag: str, tags: list[str] = []) -> list[str]:
++    """The tags with `tag` added once."""
++    if tag not in tags:
++        tags.append(tag)
++    return tags

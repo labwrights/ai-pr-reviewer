@@ -1,0 +1,12 @@
+diff --git a/fieldnotes/ops.py b/fieldnotes/ops.py
+index 9caa993..e98fac5 100644
+--- a/fieldnotes/ops.py
++++ b/fieldnotes/ops.py
+@@ -25,6 +25,6 @@ def response_overdue(severity: str, opened_at: str, now: datetime | None = None)
+ 
+     `opened_at` is an ISO 8601 time with a time zone, as the store saves it.
+     """
+-    now = now or datetime.now(UTC)
++    now = now or datetime.utcnow()
+     waited = now - datetime.fromisoformat(opened_at)
+     return waited > RESPONSE_TIME[severity]

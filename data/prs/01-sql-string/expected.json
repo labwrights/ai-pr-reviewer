@@ -1,0 +1,10 @@
+{
+  "planted": {
+    "file": "fieldnotes/store.py",
+    "lines": [
+      37,
+      37
+    ],
+    "bug": "SQL built by inserting user input into the query string: SQL injection"
+  }
+}

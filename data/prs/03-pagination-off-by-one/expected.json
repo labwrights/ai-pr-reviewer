@@ -1,0 +1,10 @@
+{
+  "planted": {
+    "file": "fieldnotes/tickets.py",
+    "lines": [
+      26,
+      26
+    ],
+    "bug": "each page drops its last item (off by one)"
+  }
+}

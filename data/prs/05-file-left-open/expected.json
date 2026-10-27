@@ -1,0 +1,10 @@
+{
+  "planted": {
+    "file": "fieldnotes/export.py",
+    "lines": [
+      10,
+      17
+    ],
+    "bug": "the early return leaves the file open (and half written): use a with block"
+  }
+}

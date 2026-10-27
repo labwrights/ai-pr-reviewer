@@ -1,0 +1,12 @@
+diff --git a/fieldnotes/store.py b/fieldnotes/store.py
+index 61016f2..ab1f463 100644
+--- a/fieldnotes/store.py
++++ b/fieldnotes/store.py
+@@ -34,6 +34,6 @@ def add_ticket(db: sqlite3.Connection, service: str, title: str, severity: str)
+ def find_tickets(db: sqlite3.Connection, service: str) -> list[dict]:
+     """Every ticket for one service, oldest first."""
+     rows = db.execute(
+-        "SELECT * FROM tickets WHERE service = ? ORDER BY opened_at, id", (service,)
++        f"SELECT * FROM tickets WHERE service = '{service}' ORDER BY opened_at, id"
+     ).fetchall()
+     return [dict(r) for r in rows]

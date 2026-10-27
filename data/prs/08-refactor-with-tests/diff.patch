@@ -1,0 +1,31 @@
+diff --git a/fieldnotes/ops.py b/fieldnotes/ops.py
+index 9caa993..1f0da40 100644
+--- a/fieldnotes/ops.py
++++ b/fieldnotes/ops.py
+@@ -11,8 +11,13 @@ RESPONSE_TIME = {"sev1": timedelta(minutes=15), "sev2": timedelta(minutes=30),
+                  "sev3": timedelta(hours=4)}
+ 
+ 
++def budget_ms(service: str) -> int:
++    """A service's p95 latency budget, or the default for services without one."""
++    return LATENCY_BUDGET_MS.get(service, DEFAULT_BUDGET_MS)
++
++
+ def health(service: str, p95_latency_ms: int) -> str:
+-    budget = LATENCY_BUDGET_MS.get(service, DEFAULT_BUDGET_MS)
++    budget = budget_ms(service)
+     if p95_latency_ms > 5 * budget:
+         return "down"
+     if p95_latency_ms > budget:
+diff --git a/fieldnotes/tests/test_fieldnotes.py b/fieldnotes/tests/test_fieldnotes.py
+index f4633dd..bee65b7 100644
+--- a/fieldnotes/tests/test_fieldnotes.py
++++ b/fieldnotes/tests/test_fieldnotes.py
+@@ -60,3 +60,7 @@ def test_export_writes_every_ticket(tmp_path):
+     path = tmp_path / "tickets.csv"
+     assert export.export_csv(rows, str(path)) == 1
+     assert list(csv.DictReader(path.open()))[0]["title"] == "Slow"
++
++
++def test_unknown_services_get_the_default_budget():
++    assert ops.budget_ms("billing-api") == ops.DEFAULT_BUDGET_MS

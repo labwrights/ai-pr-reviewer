@@ -1,0 +1,10 @@
+{
+  "planted": {
+    "file": "fieldnotes/tickets.py",
+    "lines": [
+      29,
+      33
+    ],
+    "bug": "a mutable default argument shared between calls, and the caller's list is changed in place"
+  }
+}

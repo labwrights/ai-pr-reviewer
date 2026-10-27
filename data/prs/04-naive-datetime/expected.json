@@ -1,0 +1,10 @@
+{
+  "planted": {
+    "file": "fieldnotes/ops.py",
+    "lines": [
+      28,
+      28
+    ],
+    "bug": "a naive datetime subtracted from an aware one: TypeError at runtime (and utcnow is deprecated)"
+  }
+}

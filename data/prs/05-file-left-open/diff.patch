@@ -1,0 +1,22 @@
+diff --git a/fieldnotes/export.py b/fieldnotes/export.py
+index a74729b..20287b3 100644
+--- a/fieldnotes/export.py
++++ b/fieldnotes/export.py
+@@ -7,9 +7,12 @@ FIELDS = ["id", "service", "title", "severity", "opened_at"]
+ 
+ def export_csv(tickets: list[dict], path: str) -> int:
+     """Write tickets to `path`; returns how many were written."""
+-    with open(path, "w", newline="") as f:
+-        writer = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
+-        writer.writeheader()
+-        for ticket in tickets:
+-            writer.writerow(ticket)
++    f = open(path, "w", newline="")
++    writer = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
++    writer.writeheader()
++    for ticket in tickets:
++        if not ticket.get("id"):
++            return 0
++        writer.writerow(ticket)
++    f.close()
+     return len(tickets)

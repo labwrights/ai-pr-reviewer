@@ -1,0 +1,13 @@
+diff --git a/fieldnotes/tickets.py b/fieldnotes/tickets.py
+index 027d564..c09c9a3 100644
+--- a/fieldnotes/tickets.py
++++ b/fieldnotes/tickets.py
+@@ -23,7 +23,7 @@ def page(items: list, page_number: int, page_size: int = 20) -> list:
+     if page_number < 1 or page_size < 1:
+         raise ValueError("page_number and page_size start at 1")
+     start = (page_number - 1) * page_size
+-    return items[start:start + page_size]
++    return items[start:start + page_size - 1]
+ 
+ 
+ def with_tag(tags: list[str] | None, tag: str) -> list[str]:
