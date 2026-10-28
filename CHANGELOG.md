@@ -2,6 +2,12 @@
 
 What changed in this package, newest first. Before every release, both labs are run again on live Azure and in GitHub Actions.
 
+## [2027 Edition, update 2] — 2026-10-28
+
+A documentation-only update; no lab code changed.
+
+- **Every code block is explained, line by line.** Under each block of code in the labs, a folded "Line by line" section says what each line does, and why it's there. It's closed by default, so the lab reads as before if you already know the code. Commands and captured output keep a plain sentence instead.
+
 ## [2027 Edition, update 1] — 2026-10-27
 
 A documentation-only update; no lab content changed.

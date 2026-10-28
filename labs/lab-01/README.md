@@ -176,6 +176,41 @@ def review(diff_text: str, pr_text: str = "", budget: int = BUDGET_TOKENS) -> Re
     return result
 ```
 
+<details><summary>Line by line</summary>
+
+- `from dataclasses import dataclass, field`: a shortcut for classes that mostly hold data, and `field`, explained below.
+- `from . import diff, model`, `from .split import split` and `from .validate import validate`: your other modules. One dot means "this folder".
+- the two comment lines: why the schema is strict: the reply always parses, and it has no field a trick could flip to "approve".
+- `SCHEMA = {`, `"type": "object"` and `"properties": {`: the reply is one object.
+- `"findings": {"type": "array", "items": {`: a list of findings. Each one is an object.
+- `"file"`, `"line"` and `"title"`: where the problem is, and a short name for it. `"line"` must be a whole number.
+- `"severity": {"type": "string", "enum": [...]}`: one of three words, and nothing else.
+- `"reason"`: why it's a problem.
+- `"required": [...]` and `"additionalProperties": False` inside the finding: every field, and no others.
+- `"summary": {"type": "string"}`: one sentence about the whole change.
+- the outer `"required"` and `"additionalProperties": False`: the same rule for the reply itself.
+- `INSTRUCTIONS = (` to `)`: the system prompt, one sentence at a time. What to report, and what not to. What each finding must give, and what each severity means. Return nothing when nothing is wrong. And the pull request's own text is untrusted: it can't change these rules, and the reviewer never approves anything.
+- `BUDGET_TOKENS = 12_000` and its comment: the most diff text sent in one call. The underscore just makes the number easier to read.
+- `@dataclass` and `class Review:`: the result of one review.
+- `findings: list[dict] = field(default_factory=list)` and its comment: the findings that passed the checks. `default_factory=list` gives each `Review` its own new list.
+- `dropped` and its comment: the findings that were refused, kept with the reason.
+- `summaries`: one summary per call.
+- `parts` and its comment: how many calls the change took.
+- `input_tokens`, `output_tokens` and `cost_usd`: what the review used and cost.
+- `def review(diff_text: str, pr_text: str = "", budget: int = BUDGET_TOKENS) -> Review:`: reviews one change.
+- `files = [f for f in diff.parse(diff_text) if f.reviewable]` and its comment: each file in the diff, except ones with nothing to review, such as deleted files.
+- `result = Review()`: an empty result, to fill in.
+- `for part in split(files, budget):`: the files, in groups that each fit the budget (Step 5).
+- `prompt = (` to `)`: the pull request's text, inside the untrusted tags, then each file's changes with line numbers.
+- `reply = model.ask(INSTRUCTIONS, prompt, SCHEMA)`: one call to the model, with the schema.
+- `kept, dropped = validate(reply.data["findings"], part)`: checks each finding against the real diff (Step 4).
+- `result.findings += kept` and `result.dropped += dropped`: adds them to the result.
+- `result.summaries.append(...)` and `result.parts += 1`: the part's summary, and one more call.
+- the three token and cost lines: adds up what each call used.
+- `return result`: the whole review.
+
+</details>
+
 The parts to notice:
 - **The instructions are a job description.** What counts as a problem, what doesn't, how to rate it, and what to do when there's nothing. "Not style or naming" keeps the noise down.
 - **The pull request's own text is fenced off.** Its title and description help the model understand the change. But anyone who opens a pull request writes them, so they go inside tags and are called data. Lab 2 tests this on purpose.
@@ -233,6 +268,20 @@ def validate(findings: list[dict], files: list[FileDiff]) -> tuple[list[dict], l
     return kept, dropped
 ```
 
+<details><summary>Line by line</summary>
+
+- `from .diff import FileDiff`: the type for one file's changes.
+- `def validate(findings: list[dict], files: list[FileDiff]) -> tuple[list[dict], list[dict]]:` and its docstring: splits the model's findings into the ones to keep and the ones to drop.
+- `added = {f.path: f.added_lines for f in files}`: for each file, the line numbers the change added.
+- `kept, dropped = [], []`: the two lists.
+- `for finding in findings:`: each finding the model gave.
+- `if finding["file"] not in added:` and its `append`: a file that isn't in this change is dropped, with the reason. `{**finding, "why": ...}` copies the finding and adds the reason.
+- `elif finding["line"] not in added[finding["file"]]:` and its `append`: a line the change didn't add is dropped too.
+- `else:` and `kept.append(finding)`: only a finding on an added line, in a changed file, is kept.
+- `return kept, dropped`: both lists.
+
+</details>
+
 A finding survives only when its file is in this change and its line is one the change added. Everything else is dropped, with the reason. A comment on the wrong line is worse than no comment: people stop reading the reviewer. And in lab 2, GitHub refuses a comment on a line it doesn't show in the pull request.
 
 How often does it happen? This lab's verification measured it both ways, over the eight pull requests with three runs each:
@@ -276,6 +325,22 @@ def split(files: list[FileDiff], budget: int) -> list[list[FileDiff]]:
     return parts
 ```
 
+<details><summary>Line by line</summary>
+
+- `from .diff import FileDiff, hunks`: the file type, and a function that splits a file's changes into its hunks.
+- `def estimate_tokens(text: str) -> int:` and its `return`: a rough count: about four characters per token, plus one, so even an empty text counts as one.
+- `def split(files: list[FileDiff], budget: int) -> list[list[FileDiff]]:` and its docstring: groups files into parts that each fit the budget. A file too big on its own is split by hunk, and a hunk is never cut.
+- `parts`, `current` and `size`: the finished parts, the part being filled, and its size so far.
+- `for file in files:`: each file.
+- `pieces = [file] if estimate_tokens(file.text) <= budget else hunks(file)`: the whole file if it fits, and otherwise its hunks.
+- `for piece in pieces:` and `tokens = estimate_tokens(piece.text)`: each piece, and its size.
+- `if current and size + tokens > budget:`, its comment and its two lines: this piece would overflow the part, so the part is finished and a new one starts.
+- `current.append(piece)` and `size += tokens`: adds the piece.
+- `if current:` and `parts.append(current)`: the last part.
+- `return parts`: every part, in order.
+
+</details>
+
 Real pull requests can be large. A model has a limit on what it reads at once, and long inputs cost more and get less attention. So the reviewer packs whole files into parts under a budget. A file too big on its own goes one hunk at a time. A hunk is never cut, so every finding keeps the lines around it.
 
 The budget is 12,000 tokens, far more than any prepared pull request. To see a split, shrink it.
@@ -312,6 +377,17 @@ def score(expected: dict, findings: list[dict]) -> dict:
     caught = any(f["file"] == planted["file"] and start <= f["line"] <= end for f in findings)
     return {"caught": caught, "false_alarms": 0}
 ```
+
+<details><summary>Line by line</summary>
+
+- `def score(expected: dict, findings: list[dict]) -> dict:`: scores one review against what's known about the pull request.
+- `planted = expected["planted"]`: the bug planted in it, or `None` for a clean one.
+- `if planted is None:`, its comment and its `return`: on a clean pull request, every high or medium finding is a false alarm. Each `True` counts as 1.
+- `start, end = planted["lines"]`: the lines the planted bug added.
+- `caught = any(...)`: caught only if a kept finding is in the right file, on one of those lines.
+- `return {"caught": caught, "false_alarms": 0}`: the score.
+
+</details>
 
 Each prepared pull request has an `expected.json`, written from the planted bug, never from the reviewer's output. A catch counts only when a kept finding sits on the lines the bug added. A finding somewhere else in the file doesn't count: you count exactly what you claim. On the clean pull requests, any `high` or `medium` finding is a false alarm.
 
@@ -354,6 +430,17 @@ def test_the_score_counts_only_the_planted_lines():
     clean = {"planted": None}
     assert measure.score(clean, [finding("x", 1, "low"), finding("x", 2, "high")])["false_alarms"] == 1
 ```
+
+<details><summary>Line by line</summary>
+
+- `def test_the_score_counts_only_the_planted_lines():`: the name says what it proves.
+- `expected = json.loads(...)`: the first prepared pull request's `expected.json`. `PRS` is the folder of prepared pull requests, set in the full file.
+- the first `assert`: a finding on line 37, one of the planted lines, counts as caught. `finding` is a helper in the full file that builds a finding.
+- the second `assert`: a finding on line 25, in the same file but not on the bug, doesn't count.
+- `clean = {"planted": None}`: a clean pull request.
+- the last `assert`: a low finding isn't a false alarm, but a high one is, so the count is 1.
+
+</details>
 
 The others check three things. Invented lines are dropped with a reason. The model sees numbered lines and the fenced-off text. And a large change splits by file and by hunk.
 

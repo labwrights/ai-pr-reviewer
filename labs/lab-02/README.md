@@ -142,6 +142,31 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
+<details><summary>Line by line</summary>
+
+- `import os`, `import sys` and `from pathlib import Path`: environment variables, the exit code, and file paths.
+- `from . import github` and `from .review import Review, review`: the small GitHub client, and your reviewer from lab 1.
+- `FORK_NOTICE = (` to `)`: the message for a pull request from a fork, which gets no sign-in token, so it can't be reviewed.
+- `def comment(finding: dict) -> str:` and its `return`: one inline comment: the severity in capitals and the title in bold, then the reason.
+- `def build(r: Review) -> tuple[str, list[dict]]:` and its docstring: the review's body and its inline comments. The body is written by this code from checked findings, never copied from the model's own text. That text is where an instruction hidden in the pull request could try to speak.
+- `comments = [` to `]`: one inline comment per finding, on its file and line. `"side": "RIGHT"` puts it on the new version of the line.
+- `count = f"..."`: "1 finding" or "3 findings", with the right ending.
+- `body = (` to `)`: the body: how many findings, how many were left out (only if any were), and what the review used and cost. `:.4f` shows the cost to four decimal places.
+- `return body, comments`: both.
+- `def main() -> int:`: what the workflow runs.
+- `if os.environ.get("HEAD_IS_FORK") == "true":` and its two lines: a fork's pull request gets a notice in the workflow's log, and the job ends without error. `::notice::` is how a workflow shows a notice.
+- `repo, number = ...`: the repository and the pull request's number, from the workflow's environment.
+- `pr_text = f"..."`: the pull request's title and description, as one text.
+- `r = review(Path(os.environ["PR_DIFF"]).read_text(), pr_text)`: reviews the diff the workflow saved.
+- `body, comments = build(r)`: the review to post.
+- `try:` and `posted = github.post_review(...)`: posts it to the pull request.
+- `except RuntimeError as err:` and the `if` with its `raise`: anything but a 422 is a real failure, and passes on.
+- the comment, `listed = ...` and the next `posted = ...`: GitHub refused a comment on a line it doesn't show. So every finding goes in the body as a list instead, with no inline comments.
+- `print(f"posted: ...")` and `return 0`: the review's address, in the log.
+- `if __name__ == "__main__":` and `sys.exit(main())`: runs `main` when the workflow starts the module, and passes its exit code back.
+
+</details>
+
 The parts to notice:
 - **Each finding becomes a comment on its line**, on the new side of the diff (`"side": "RIGHT"`). Lab 1's validation already made sure every line is one the pull request added.
 - **The body is written by your code, from counts and costs.** The model's free-text summary is never posted: it's the one field an instruction hidden in the pull request could fill.
@@ -172,6 +197,24 @@ permissions:
           PR_TITLE: ${{ github.event.pull_request.title }}   # PR text only through env:
           PR_BODY: ${{ github.event.pull_request.body }}     # never inside a run: line
 ```
+
+<details><summary>Line by line</summary>
+
+- `on:`, `pull_request:` and `types: [...]`: the workflow runs when a pull request is opened, gets new commits, or is reopened.
+- `permissions:`: the workflow's token gets only these. Least privilege.
+- `contents: read` and its comment: it can read the code.
+- `pull-requests: write` and its comment: it can post a review. GitHub's default setting still stops Actions approving pull requests.
+- `id-token: write` and its comment: it can ask for an OIDC token, to sign in to Azure with no stored secret.
+- `...`: other lines, not shown here.
+- `- name: Sign in to Azure ...`: a step's name, as the run's log shows it.
+- `if: ${{ !github.event.pull_request.head.repo.fork }}`: the step is skipped for a fork's pull request, which gets no token.
+- `uses: azure/login@v2`: Microsoft's sign-in action, version 2.
+- `...`: more lines, not shown.
+- `- name: Review it` and `run: python -m reviewer.ci`: runs your module from Step 3.
+- `env:`: environment variables for that step.
+- `PR_TITLE: ...` and `PR_BODY: ...`, with their comments: the pull request's text reaches your code only as environment variables. Pasted inside a `run:` line, text written by the pull request's author could run as a shell command.
+
+</details>
 
 Two choices here are about security, not convenience:
 - **Three permissions, no more.** Without a `permissions:` block, a workflow's token can get far wider rights.
@@ -307,6 +350,16 @@ def test_the_models_free_text_never_reaches_the_pr(env):
     body = posted[0][2]
     assert "CANARY" not in body and "approve" not in body.lower()
 ```
+
+<details><summary>Line by line</summary>
+
+- `def test_the_models_free_text_never_reaches_the_pr(env):`: the name says what it proves. `env` is a fixture in the full file that sets up the workflow's environment for one prepared pull request, and records what gets posted.
+- `posted = env("09-injection", [])`: the prepared pull request with an injection in it, and no findings. The scripted model's summary contains the canary and the word "approve".
+- `ci.main()`: runs the workflow's code.
+- `body = posted[0][2]`: the body of the review that was posted.
+- `assert "CANARY" not in body and "approve" not in body.lower()`: neither reached the pull request, because the body is built only from checked findings.
+
+</details>
 
 The scripted model in this test returns a summary that contains the marker and the word "approve", the worst case. The posted body contains neither. The others check the inline comments and cost line, the fork notice, and the fallback when GitHub refuses a line.
 
