@@ -6,7 +6,7 @@
 > - **What you do:** build a reviewer that reads a pull request's changes, reports real problems with the exact file, line and reason, and refuses anything it can't back up. Measure it on pull requests with planted bugs. Then put it on every pull request in GitHub Actions, signed in to Azure without a stored secret.
 > - **Format:** 2 hands-on labs, text and code, in your own copy of this repository. Every command and expected output was captured from a real run.
 > - **Time:** about 4 hours.
-> - **Azure cost:** **under $0.25 in total**, if you tear down when each lab says so. *Costs are estimates and vary with your region and Azure's current prices.*
+> - **Azure cost:** **under $0.25 in total**, if you tear down when each lab says so. *Costs are estimates from our runs. Yours depend on your use, your region and Azure's current prices, and they're entirely yours: Azure bills you directly.*
 > - **You need:** Python basics, git and a GitHub account, and an Azure subscription with billing enabled.
 > - **Price:** free.
 

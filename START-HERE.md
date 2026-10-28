@@ -23,6 +23,8 @@ scripts/check-prereqs.sh
 
 A personal pay-as-you-go subscription is exactly right. If you don't have one, sign up at azure.microsoft.com and choose pay-as-you-go.
 
+**It's your own subscription.** Everything the labs create goes into the Azure subscription you sign in with, and Azure bills you for it directly. Labwrights never sees your subscription, your resources or your bill.
+
 1. **Sign in** so the labs can act as you:
 
    Run
@@ -30,6 +32,17 @@ A personal pay-as-you-go subscription is exactly right. If you don't have one, s
    ```bash
    az login
    ```
+
+   If you have more than one subscription, make sure the labs use the right one. Check it, and change it if needed:
+
+   Run
+
+   ```bash
+   az account show --query name -o tsv                       # the subscription the labs will use
+   az account set --subscription "<your lab subscription>"   # only if it's the wrong one
+   ```
+
+   Use a subscription you're allowed to spend on: a work subscription only if your company agrees. Every bring-up script prints the subscription's name first, so you can check before anything is created.
 
 2. **Protect your wallet.** A budget alert means a forgotten resource can never surprise you:
 
@@ -45,7 +58,7 @@ A personal pay-as-you-go subscription is exactly right. If you don't have one, s
 
 3. **Check you can register an app.** Lab 2 lets GitHub Actions sign in to Azure, which means registering an app in your Azure tenant. A personal Azure account can always do this; company tenants often block it. If lab 2 fails with "Insufficient privileges", use a personal subscription.
 
-4. **Cost expectations.** Both labs together cost **under $0.25** if you tear down when each lab tells you to. The model bills per token and costs nothing while idle. All cost figures are **estimates**: your actual costs vary with your region and Azure's current prices.
+4. **Cost expectations.** Both labs together cost **under $0.25** in our runs, if you tear down when each lab tells you to. The model bills per token and costs nothing while idle. All cost figures are **estimates**. Your actual costs depend on your use: how much you call the model, how long you keep resources up, your region, and Azure's current prices. **They're entirely yours:** Azure bills you directly, and Labwrights doesn't pay or refund them.
 
 5. **Region note.** The labs default to `eastus2`, which offers the model. If yours doesn't, `scripts/bring-up.sh --location swedencentral` uses another region.
 

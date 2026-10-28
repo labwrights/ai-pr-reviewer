@@ -2,6 +2,13 @@
 
 What changed in this package, newest first. Before every release, both labs are run again on live Azure and in GitHub Actions.
 
+## [2027 Edition, update 1] — 2026-10-27
+
+A documentation-only update; no lab content changed.
+
+- **[START-HERE.md](START-HERE.md), section 2,** now says plainly that the labs run on your own Azure subscription and bill you directly. It also shows how to check which subscription the labs will use, and change it, if you have more than one.
+- **Azure costs:** START-HERE and the README now say that your costs depend on your use, and that they're entirely yours: Azure bills you directly.
+
 ## [2027 Edition]
 
 First release.
